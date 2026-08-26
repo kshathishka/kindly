@@ -1,14 +1,17 @@
 from functools import lru_cache
-from typing import List
+from typing import Annotated, List
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_title: str = "Kindly"
     app_env: str = "development"
-    cors_origins: List[str] = Field(default_factory=lambda: ["*"])
+    # NoDecode stops pydantic-settings from JSON-decoding this value before the
+    # validator below runs. Without it a plain comma-separated CORS_ORIGINS in
+    # .env raises SettingsError at import time and the app never starts.
+    cors_origins: Annotated[List[str], NoDecode] = Field(default_factory=lambda: ["*"])
     json_data_dir: str = "./data"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"

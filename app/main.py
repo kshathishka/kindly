@@ -201,8 +201,18 @@ def login(request: LoginRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/children", response_model=List[ChildProfile])
-def list_children() -> List[Dict[str, Any]]:
-    return storage.list_children()
+def list_children(caregiver_id: Optional[str] = Query(default=None)) -> List[Dict[str, Any]]:
+    """
+    List child profiles, scoped to one caregiver when `caregiver_id` is given.
+
+    Without the parameter this returns every profile in the store, which is
+    only useful for local inspection — the app always passes the signed-in
+    caregiver's id so one family never sees another family's children.
+    """
+    children = storage.list_children()
+    if caregiver_id:
+        return [child for child in children if child.get("caregiver_id") == caregiver_id]
+    return children
 
 
 @app.post("/api/v1/children", response_model=ChildProfile)

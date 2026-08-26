@@ -53,6 +53,10 @@ class CaregiverAction(str, Enum):
 
 class ChildProfile(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
+    # The caregiver account this profile belongs to. Optional so profiles
+    # created before this field existed still load, but everything created
+    # through the app now carries one and GET /children filters on it.
+    caregiver_id: Optional[str] = None
     name: str = Field(..., min_length=1, max_length=50)
     age: Optional[int] = Field(default=None, ge=1, le=18)
     communication_level: CommunicationLevel
