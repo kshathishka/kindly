@@ -27,6 +27,30 @@ class SensoryLevel(str, Enum):
     HIGH = "high"
 
 
+class HelpRequestNeed(str, Enum):
+    BATHROOM = "bathroom"
+    BREAK = "break"
+    TOO_LOUD = "too_loud"
+    UNCOMFORTABLE = "uncomfortable"
+    NEED_CAREGIVER = "need_caregiver"
+    LOST = "lost"
+    SOMETHING_HURTS = "something_hurts"
+
+
+class HelpRequestStatus(str, Enum):
+    SENT = "sent"
+    CAREGIVER_SEEN = "caregiver_seen"
+    CAREGIVER_RESPONDED = "caregiver_responded"
+    CAREGIVER_COMING = "caregiver_coming"
+    CAREGIVER_UNAVAILABLE = "caregiver_unavailable"
+
+
+class CaregiverAction(str, Enum):
+    COMING = "coming"
+    SEEN = "seen"
+    CANNOT_COME = "cannot_come"
+
+
 class ChildProfile(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., min_length=1, max_length=50)
@@ -94,3 +118,62 @@ class Story(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     source: str = "ai"
     prompt_summary: Optional[str] = None
+
+
+class SignupRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=8, max_length=128)
+    role: str = "caregiver"
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class AuthResponse(BaseModel):
+    id: str
+    email: str
+    role: str
+    token: str
+
+
+class HelpRequestCreate(BaseModel):
+    child_id: str
+    need: HelpRequestNeed
+    caregiver_id: Optional[str] = None
+    note: Optional[str] = Field(default=None, max_length=250)
+
+
+class CaregiverResponseRequest(BaseModel):
+    action: CaregiverAction
+    caregiver_message: Optional[str] = Field(default=None, max_length=250)
+    alternative_helper_name: Optional[str] = Field(default=None, max_length=100)
+
+
+class HelpRequest(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    child_id: str
+    caregiver_id: Optional[str] = None
+    need: HelpRequestNeed
+    note: Optional[str] = None
+    is_urgent: bool = False
+    status: HelpRequestStatus = HelpRequestStatus.SENT
+    caregiver_action: Optional[CaregiverAction] = None
+    caregiver_message: Optional[str] = None
+    alternative_helper_name: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SocialSkillOption(BaseModel):
+    id: str
+    label: str
+    feedback: str
+
+
+class SocialSkillScenario(BaseModel):
+    id: str
+    title: str
+    prompt: str
+    options: List[SocialSkillOption]

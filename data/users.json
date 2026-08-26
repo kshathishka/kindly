@@ -1,0 +1,62 @@
+[
+  {
+    "id": "00b59d46ecd7b26fd1bb85b35c9e3c6e",
+    "email": "kshathishka10@gmail.com",
+    "password_hash": "e623741d42941b6696bf1c9305c0b61a$57a0a77f231492db0baa669508c9034775b9eca8550de8329589b73b78bf1d5d",
+    "role": "caregiver"
+  },
+  {
+    "id": "4cb4b76f19a47409a9aade9e8644bc91",
+    "email": "auth-test-a7b624c3-240f-440d-9e39-73844dd10001@example.com",
+    "password_hash": "867c8fdd52ea9d3d71baa85fc1dd2e48$34ce1f7493a70b8b7ef1ad2d41c20c00155e3f1bfd03296e9f6e9b404ebd0881",
+    "role": "caregiver"
+  },
+  {
+    "id": "d3fcd632ddd5b3d812dfa7edb0f2dfa8",
+    "email": "duplicate-test-e96df68b-75ef-4d9b-8442-b2fcd24110ab@example.com",
+    "password_hash": "c0590b4ca4cc7b6b49479ea0f3733cbb$bdbbc89a3025f2ce7b6c2482b27ae1ad62f811e28e9046c8cf8f3cbeaf308334",
+    "role": "caregiver"
+  },
+  {
+    "id": "86ad25a57ae2505d1d5f46bfb8301bf7",
+    "email": "auth-test-db73bd66-7e75-4659-b10f-6a13e95305cf@example.com",
+    "password_hash": "b189d39ee6ae43da0b923d80b38ff680$749f03789b34c11e215d1aadd73673086e3192d2949f1ab77b67520ad70ab937",
+    "role": "caregiver"
+  },
+  {
+    "id": "50961cc8670562f58e75d3fbf43345f2",
+    "email": "duplicate-test-b413224d-3f72-4d3f-a402-bb544521fbac@example.com",
+    "password_hash": "8d93255cde7d6a7abeb338c3c7d90341$5391236205ffd959338f7931a2ec351c36ab3c1d3f855c1ac2ee0161963aa5fc",
+    "role": "caregiver"
+  },
+  {
+    "id": "52d6a17d997af6cec63fc685c742e289",
+    "email": "auth-test-7c6bd676-a5d2-4645-a9bb-518b0486d098@example.com",
+    "password_hash": "36275a9d273662697b31b4e3c5460f0d$8e35e1dc4a13cd585f3f61962ae90279c6df88b22e23730787858916747a2152",
+    "role": "caregiver"
+  },
+  {
+    "id": "9df818b493b38ddd68a734d067ab561c",
+    "email": "duplicate-test-373e68d8-6a82-4e48-9770-ad8a2df2a000@example.com",
+    "password_hash": "8e7a9dfe94d86c2022bd9d2e0e1923de$2dcb7610cc310395cd122e34b6776db1f0825bb2b0453e296ad23a6fff523a56",
+    "role": "caregiver"
+  },
+  {
+    "id": "54fddef19255765f8a7f8783d179b6b4",
+    "email": "auth-test-e2bb8fc1-586e-4229-a053-d393d245bdff@example.com",
+    "password_hash": "68511ca4a38d79719f66a9f4460c42e7$f57923b02eab11ad86610644137425352e9567513ff9c7cb661419ebcf8af50a",
+    "role": "caregiver"
+  },
+  {
+    "id": "cd5dacd594c01717b85f605177d98700",
+    "email": "duplicate-test-d67fbbb6-fa33-4a10-8023-8aa864b80cdb@example.com",
+    "password_hash": "ab8df4317cb1000441803e7f20768659$abd52d3463aea477ab419f83535f78ac793412a246a6a6236f58356bf890a60c",
+    "role": "caregiver"
+  },
+  {
+    "id": "ee90166594baeab59d109b7288a10db2",
+    "email": "kindly.demo.20260826@example.com",
+    "password_hash": "ab6d872cc67d0eb740812e767a10d2f5$fd4852038756a2bfb3f88a348b520231ab721a7d90b45f9c5afb477f3f8671ac",
+    "role": "caregiver"
+  }
+]

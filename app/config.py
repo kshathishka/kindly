@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_title: str = "StoryBridge AI"
+    app_title: str = "Kindly"
     app_env: str = "development"
     cors_origins: List[str] = Field(default_factory=lambda: ["*"])
     json_data_dir: str = "./data"

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -10,7 +12,7 @@ def test_root_endpoint():
 
     assert response.status_code == 200
     assert response.json() == {
-        "service": "StoryBridge AI",
+        "service": "Kindly",
         "status": "ok",
         "docs": "/docs",
         "health": "/health",
@@ -97,3 +99,114 @@ def test_frontend_config_endpoint():
     assert "request_types" in payload
     assert "Doctor visit" in payload["situations"]
     assert "Short story" in payload["formats"]
+
+
+def test_signup_and_login():
+    email = f"auth-test-{uuid4()}@example.com"
+    signup_response = client.post("/api/v1/auth/signup", json={"email": email, "password": "correct horse"})
+    assert signup_response.status_code == 201, signup_response.text
+    auth = signup_response.json()
+    assert auth["email"] == email
+    assert auth["role"] == "caregiver"
+    assert auth["token"]
+
+    login_response = client.post("/api/v1/auth/login", json={"email": email, "password": "correct horse"})
+    assert login_response.status_code == 200, login_response.text
+    assert login_response.json()["id"] == auth["id"]
+
+
+def test_auth_rejects_duplicate_and_invalid_password():
+    email = f"duplicate-test-{uuid4()}@example.com"
+    client.post("/api/v1/auth/signup", json={"email": email, "password": "correct horse"})
+    duplicate_response = client.post("/api/v1/auth/signup", json={"email": email, "password": "correct horse"})
+    assert duplicate_response.status_code == 409
+
+    invalid_response = client.post("/api/v1/auth/login", json={"email": email, "password": "wrong password"})
+    assert invalid_response.status_code == 401
+
+
+def test_social_skills_scenarios_available():
+    response = client.get("/api/v1/social-skills/scenarios")
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert len(payload) >= 5
+    assert any(item["id"] == "greeting" for item in payload)
+
+
+def test_help_request_flow_and_caregiver_response():
+    child_payload = {
+        "name": "Mia",
+        "age": 8,
+        "communication_level": "conversational",
+        "special_interests": ["art"],
+        "sensory_sensitivities": {
+            "sound": "medium",
+            "light": "low",
+            "touch": "low",
+            "smell": "low",
+            "crowds": "medium",
+            "texture": "low",
+        },
+        "preferred_language": "simple",
+        "known_triggers": ["surprise noises"],
+        "favorite_activities": ["drawing"],
+        "calming_techniques": ["counting breaths"],
+    }
+    child = client.post("/api/v1/children", json=child_payload).json()
+
+    request_response = client.post(
+        "/api/v1/help-requests",
+        json={
+            "child_id": child["id"],
+            "need": "bathroom",
+            "note": "Please come with me",
+        },
+    )
+    assert request_response.status_code == 201, request_response.text
+    request_payload = request_response.json()
+    assert request_payload["status"] == "sent"
+    assert request_payload["is_urgent"] is False
+
+    caregiver_response = client.post(
+        f"/api/v1/help-requests/{request_payload['id']}/respond",
+        json={"action": "coming", "caregiver_message": "I am coming now"},
+    )
+    assert caregiver_response.status_code == 200, caregiver_response.text
+    updated_payload = caregiver_response.json()
+    assert updated_payload["status"] == "caregiver_coming"
+    assert updated_payload["caregiver_action"] == "coming"
+
+
+def test_help_request_urgent_flow_auto_acknowledged():
+    child_payload = {
+        "name": "Noah",
+        "age": 9,
+        "communication_level": "simple-sentences",
+        "special_interests": ["maps"],
+        "sensory_sensitivities": {
+            "sound": "low",
+            "light": "low",
+            "touch": "low",
+            "smell": "low",
+            "crowds": "medium",
+            "texture": "low",
+        },
+        "preferred_language": "simple",
+        "known_triggers": [],
+        "favorite_activities": ["puzzles"],
+        "calming_techniques": ["deep breaths"],
+    }
+    child = client.post("/api/v1/children", json=child_payload).json()
+
+    request_response = client.post(
+        "/api/v1/help-requests",
+        json={
+            "child_id": child["id"],
+            "need": "lost",
+        },
+    )
+    assert request_response.status_code == 201, request_response.text
+    request_payload = request_response.json()
+    assert request_payload["is_urgent"] is True
+    assert request_payload["status"] == "caregiver_coming"
+    assert request_payload["caregiver_action"] == "coming"

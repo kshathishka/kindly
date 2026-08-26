@@ -12,10 +12,12 @@ class JSONStorage:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.children_file = self.base_dir / "children.json"
         self.stories_file = self.base_dir / "stories.json"
+        self.users_file = self.base_dir / "users.json"
+        self.help_requests_file = self.base_dir / "help_requests.json"
         self._ensure_files()
 
     def _ensure_files(self) -> None:
-        for file_path in (self.children_file, self.stories_file):
+        for file_path in (self.children_file, self.stories_file, self.users_file, self.help_requests_file):
             if not file_path.exists():
                 file_path.write_text("[]", encoding="utf-8")
 
@@ -84,3 +86,41 @@ class JSONStorage:
 
     def get_child_stories(self, child_id: str) -> List[Dict[str, Any]]:
         return [story for story in self.list_stories() if story.get("child_id") == child_id]
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        return self._read_json(self.users_file)
+
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        normalized_email = email.strip().lower()
+        return next((user for user in self.list_users() if user.get("email") == normalized_email), None)
+
+    def create_user(self, user: Dict[str, Any]) -> Dict[str, Any]:
+        users = self.list_users()
+        users.append(user)
+        self._write_json(self.users_file, users)
+        return user
+
+    def list_help_requests(self) -> List[Dict[str, Any]]:
+        return self._read_json(self.help_requests_file)
+
+    def get_help_request(self, request_id: str) -> Optional[Dict[str, Any]]:
+        for request in self.list_help_requests():
+            if request.get("id") == request_id:
+                return request
+        return None
+
+    def create_help_request(self, help_request: Dict[str, Any]) -> Dict[str, Any]:
+        requests = self.list_help_requests()
+        requests.append(help_request)
+        self._write_json(self.help_requests_file, requests)
+        return help_request
+
+    def update_help_request(self, request_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        requests = self.list_help_requests()
+        for index, request in enumerate(requests):
+            if request.get("id") == request_id:
+                request.update(updates)
+                requests[index] = request
+                self._write_json(self.help_requests_file, requests)
+                return request
+        return None
