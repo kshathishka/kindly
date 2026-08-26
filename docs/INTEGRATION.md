@@ -60,6 +60,7 @@ matching change here**. The backend publishes an OpenAPI schema at
 | Screen | Endpoints |
 | --- | --- |
 | `app/auth` | `POST /auth/signup`, `POST /auth/login` |
+| Settings → Sign out | `POST /auth/logout` |
 | `app/onboarding` | `POST /children` |
 | `app/page` (Home) | `GET /frontend-config`, `GET /children`, `GET /help-requests`, `GET /stories/history`, `POST /stories/generate` |
 | `app/page` (Child mode) | `POST /help-requests`, `GET /help-requests/{id}` |
@@ -101,14 +102,27 @@ job. Comma-separated values work as intended.
 
 `ChildProfile` had no link to a user, and `GET /api/v1/children` returned every
 profile in the store. Signing in as a new caregiver showed all 51 children
-belonging to other families. Added:
+belonging to other families. Added `ChildProfile.caregiver_id` — optional, so
+the profiles already in `data/children.json` still load — and scoped the
+listing to it.
 
-- `ChildProfile.caregiver_id: Optional[str]` — optional so the profiles already
-  in `data/children.json` still load.
-- `GET /api/v1/children?caregiver_id=...` filters by it.
+**4. `app/security.py` (new) — bearer-token authentication.**
 
-The frontend passes the signed-in caregiver's id on every list, and stamps it on
-every profile it creates.
+Signup and login now mint a token and store only its SHA-256 in
+`data/sessions.json`. A `current_user` dependency resolves the token on every
+data route, and ownership is derived from it rather than from a request body or
+query parameter, so there is no id a caller can change to reach another family.
+Also added `POST /api/v1/auth/logout` and `GET /api/v1/auth/me`.
+
+On the frontend, `lib/api.ts` attaches the token to every request and handles
+401 centrally: the session is cleared and the user is sent to sign in, from
+wherever in the app the rejected call happened.
+
+**5. `tests/conftest.py` (new) — tests no longer write to `data/`.**
+
+The suite ran against the real data directory and dirtied the committed JSON
+files on every run. It now points `JSON_DATA_DIR` at a temp directory before
+`app.config` is imported, and each test gets its own signed-in caregiver.
 
 **3. `frontend/` replaced.** The vanilla-JS client that used to live there was
 removed in favour of the Next.js app.
@@ -121,12 +135,11 @@ These are real and worth fixing. None of them block local development.
 
 ### Security
 
-**Nothing is authenticated.** `/api/v1/auth/login` issues a token, but no
-endpoint verifies one — every route is open, and `caregiver_id` is a query
-parameter any caller can change. Anyone who can reach the API can read and
-modify every family's data. The fix is a FastAPI dependency that validates the
-token and derives `caregiver_id` from it instead of trusting the client.
-Until then, do not deploy this beyond localhost.
+**Authentication is in place.** Every `/api/v1` route that touches family data
+requires a bearer token; see the Authentication section of
+[DEPLOYMENT.md](DEPLOYMENT.md) for how it works and what it guarantees. The
+remaining gap is rate limiting on `/api/v1/auth/login` — nothing currently slows
+down password guessing.
 
 **Real credentials are committed.** `data/users.json` is in the public repo and
 contains a real email address with PBKDF2 password hashes. The hashes are
@@ -172,9 +185,14 @@ Two screens are waiting on backend work:
 ## Testing
 
 ```bash
-.venv-local/Scripts/python.exe -m pytest tests/ -q   # 9 passing
+.venv-local/Scripts/python.exe -m pytest tests/ -q   # 15 passing
 cd frontend && npx tsc --noEmit && npm run build
 ```
+
+Six of those cover the auth boundary: anonymous callers rejected, malformed
+tokens rejected, one caregiver unable to read or modify another's children,
+requests and stories, ownership not reassignable through the request body, and
+logout actually revoking a token.
 
 There are no frontend tests yet. `lib/api.ts` and `lib/hooks.ts` are the two
 places worth covering first.

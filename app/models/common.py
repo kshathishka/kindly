@@ -142,6 +142,14 @@ class AuthResponse(BaseModel):
     token: str
 
 
+class AuthUser(BaseModel):
+    """The signed-in account, without the token. Returned by /auth/me."""
+
+    id: str
+    email: str
+    role: str
+
+
 class HelpRequestCreate(BaseModel):
     child_id: str
     need: HelpRequestNeed

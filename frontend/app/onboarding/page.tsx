@@ -64,7 +64,6 @@ export default function OnboardingPage() {
     try {
       const parsedAge = age.trim() ? Number(age) : null
       const child = await api.createChild({
-        caregiver_id: getSession()?.id ?? null,
         name: name.trim(),
         age: parsedAge !== null && Number.isFinite(parsedAge) ? parsedAge : null,
         communication_level: communicationLevel,

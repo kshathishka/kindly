@@ -1,16 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { api } from './api';
 import type { AuthResponse } from './api-types';
 
 /**
  * Client-side session state.
  *
- * The backend issues a token at signup and login but does not yet verify one on
- * any endpoint — every /api/v1 route is currently open. So this stores who is
- * signed in for the sake of the interface, and nothing here should be mistaken
- * for access control. Adding a real dependency on the FastAPI side is the fix;
- * see docs/INTEGRATION.md.
+ * The token stored here is the bearer credential every API call carries; the
+ * server resolves it to an account and derives ownership from that. Losing it
+ * (cleared storage, a private window) means signing in again, nothing worse.
  */
 
 const SESSION_KEY = 'kindly.session';
@@ -57,6 +56,21 @@ export function clearSession(): void {
   write(ACTIVE_CHILD_KEY, null);
 }
 
+/**
+ * Signs out, revoking the token on the server first.
+ *
+ * The local session is cleared even if that call fails, so a user on a shared
+ * device is never left signed in because the network was down.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  try {
+    await api.logout();
+  } catch {
+    // Best effort. The token expires on its own regardless.
+  }
+  clearSession();
+}
+
 export function getActiveChildId(): string | null {
   return read<string>(ACTIVE_CHILD_KEY);
 }
@@ -81,9 +95,10 @@ export function useSession(): { session: Session | null; loading: boolean; signO
   }, []);
 
   const signOut = useCallback(() => {
-    clearSession();
-    setSessionState(null);
-    window.location.href = '/auth';
+    void signOutEverywhere().finally(() => {
+      setSessionState(null);
+      window.location.href = '/auth';
+    });
   }, []);
 
   return { session, loading, signOut };

@@ -25,7 +25,7 @@ export default function ActivitiesPage() {
       window.location.href = '/auth'
       return
     }
-    api.listChildren(getSession()?.id)
+    api.listChildren()
       .then((children) => {
         const stored = getActiveChildId()
         setChild(children.find((c) => c.id === stored) ?? children[0] ?? null)

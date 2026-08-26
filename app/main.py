@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 from datetime import datetime
-import hashlib
-import hmac
-import secrets
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.security import (
+    current_user,
+    hash_password,
+    issue_token,
+    owned_child_or_404,
+    revoke_token,
+    verify_password,
+)
 from app.models.common import (
     AuthResponse,
+    AuthUser,
     CaregiverAction,
     CaregiverResponseRequest,
     ChildProfile,
@@ -125,26 +131,13 @@ app.add_middleware(
 )
 
 
-def get_child_or_404(child_id: str) -> Dict[str, Any]:
-    child = storage.get_child(child_id)
-    if child is None:
-        raise HTTPException(status_code=404, detail="Child profile not found")
-    return child
+# Exposed to the auth dependency, which reads it off app.state rather than
+# importing this module and creating a circular import.
+app.state.storage = storage
 
 
-def hash_password(password: str, salt: str | None = None) -> str:
-    salt = salt or secrets.token_hex(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000).hex()
-    return f"{salt}${digest}"
-
-
-def verify_password(password: str, stored_hash: str) -> bool:
-    try:
-        salt, expected = stored_hash.split("$", 1)
-    except ValueError:
-        return False
-    actual = hash_password(password, salt).split("$", 1)[1]
-    return hmac.compare_digest(actual, expected)
+def owned_child(child_id: str, user: Dict[str, Any]) -> Dict[str, Any]:
+    return owned_child_or_404(storage, child_id, user)
 
 
 @app.get("/")
@@ -184,12 +177,13 @@ def signup(request: SignupRequest) -> Dict[str, Any]:
     if request.role not in {"caregiver", "child"}:
         raise HTTPException(status_code=422, detail="Role must be caregiver or child")
     user = storage.create_user({
-        "id": str(secrets.token_hex(16)),
+        "id": uuid4().hex,
         "email": email,
         "password_hash": hash_password(request.password),
         "role": request.role,
     })
-    return {"id": user["id"], "email": user["email"], "role": user["role"], "token": secrets.token_urlsafe(32)}
+    token = issue_token(storage, user["id"])
+    return {"id": user["id"], "email": user["email"], "role": user["role"], "token": token}
 
 
 @app.post("/api/v1/auth/login", response_model=AuthResponse)
@@ -197,39 +191,65 @@ def login(request: LoginRequest) -> Dict[str, Any]:
     user = storage.get_user_by_email(request.email)
     if user is None or not verify_password(request.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    return {"id": user["id"], "email": user["email"], "role": user["role"], "token": secrets.token_urlsafe(32)}
+    token = issue_token(storage, user["id"])
+    return {"id": user["id"], "email": user["email"], "role": user["role"], "token": token}
+
+
+@app.post("/api/v1/auth/logout", status_code=204)
+def logout(request: Request) -> None:
+    """Revokes the presented token. Absent or unknown tokens are a no-op."""
+    header = request.headers.get("Authorization") or ""
+    scheme, _, value = header.partition(" ")
+    if scheme.lower() == "bearer" and value.strip():
+        revoke_token(storage, value.strip())
+
+
+@app.get("/api/v1/auth/me", response_model=AuthUser)
+def me(user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
+    """Confirms a stored token is still valid, so the UI can trust its session."""
+    return {"id": user["id"], "email": user["email"], "role": user["role"]}
 
 
 @app.get("/api/v1/children", response_model=List[ChildProfile])
-def list_children(caregiver_id: Optional[str] = Query(default=None)) -> List[Dict[str, Any]]:
+def list_children(user: Dict[str, Any] = Depends(current_user)) -> List[Dict[str, Any]]:
     """
-    List child profiles, scoped to one caregiver when `caregiver_id` is given.
+    The signed-in caregiver's child profiles.
 
-    Without the parameter this returns every profile in the store, which is
-    only useful for local inspection — the app always passes the signed-in
-    caregiver's id so one family never sees another family's children.
+    The owner comes from the verified token, never from a parameter, so there
+    is no id a caller can change to read another family's children.
     """
-    children = storage.list_children()
-    if caregiver_id:
-        return [child for child in children if child.get("caregiver_id") == caregiver_id]
-    return children
+    return [c for c in storage.list_children() if c.get("caregiver_id") == user["id"]]
 
 
 @app.post("/api/v1/children", response_model=ChildProfile)
-def create_child(profile: ChildProfile) -> Dict[str, Any]:
-    return storage.create_child(profile.model_dump())
+def create_child(
+    profile: ChildProfile,
+    user: Dict[str, Any] = Depends(current_user),
+) -> Dict[str, Any]:
+    # Ownership is assigned from the token, so a client cannot create a profile
+    # under somebody else's account.
+    payload = profile.model_dump()
+    payload["caregiver_id"] = user["id"]
+    return storage.create_child(payload)
 
 
 @app.get("/api/v1/children/{child_id}", response_model=ChildProfile)
-def get_child(child_id: str) -> Dict[str, Any]:
-    return get_child_or_404(child_id)
+def get_child(child_id: str, user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
+    return owned_child(child_id, user)
 
 
 @app.put("/api/v1/children/{child_id}", response_model=ChildProfile)
-def update_child(child_id: str, profile: ChildProfile) -> Dict[str, Any]:
-    get_child_or_404(child_id)
+def update_child(
+    child_id: str,
+    profile: ChildProfile,
+    user: Dict[str, Any] = Depends(current_user),
+) -> Dict[str, Any]:
+    owned_child(child_id, user)
 
     profile.id = child_id
+    # Ownership is never taken from the body: a PUT cannot move a profile to
+    # another account.
+    profile.caregiver_id = user["id"]
     profile.updated_at = datetime.utcnow()
     updated = storage.update_child(child_id, profile.model_dump())
     if updated is None:
@@ -238,14 +258,19 @@ def update_child(child_id: str, profile: ChildProfile) -> Dict[str, Any]:
 
 
 @app.delete("/api/v1/children/{child_id}")
-def delete_child(child_id: str) -> Dict[str, str]:
+def delete_child(child_id: str, user: Dict[str, Any] = Depends(current_user)) -> Dict[str, str]:
+    owned_child(child_id, user)
     if not storage.delete_child(child_id):
         raise HTTPException(status_code=404, detail="Child profile not found")
     return {"status": "deleted", "id": child_id}
 
 
 @app.post("/api/v1/stories/generate", response_model=Story)
-def generate_story(request: StoryRequest) -> Dict[str, Any]:
+def generate_story(
+    request: StoryRequest,
+    user: Dict[str, Any] = Depends(current_user),
+) -> Dict[str, Any]:
+    owned_child(request.child_id, user)
     try:
         return story_service.generate_story(request)
     except ValueError as exc:
@@ -253,21 +278,40 @@ def generate_story(request: StoryRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/stories/history", response_model=List[Story])
-def story_history(child_id: Optional[str] = Query(default=None)) -> List[Dict[str, Any]]:
-    return story_service.list_stories(child_id=child_id)
+def story_history(
+    child_id: Optional[str] = Query(default=None),
+    user: Dict[str, Any] = Depends(current_user),
+) -> List[Dict[str, Any]]:
+    """
+    Stories for one of the caller's children, or for all of them.
+
+    Without `child_id` this covers every child the caller owns — never the
+    whole store.
+    """
+    if child_id:
+        owned_child(child_id, user)
+        return story_service.list_stories(child_id=child_id)
+
+    owned = {c["id"] for c in storage.list_children() if c.get("caregiver_id") == user["id"]}
+    return [s for s in story_service.list_stories() if s.get("child_id") in owned]
 
 
 @app.get("/api/v1/stories/{story_id}", response_model=Story)
-def get_story(story_id: str) -> Dict[str, Any]:
+def get_story(story_id: str, user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
     story = story_service.get_story(story_id)
     if story is None:
         raise HTTPException(status_code=404, detail="Story not found")
+    # A story is reachable only through the child it belongs to.
+    owned_child(story.get("child_id", ""), user)
     return story
 
 
 @app.post("/api/v1/help-requests", response_model=HelpRequest, status_code=201)
-def create_help_request(request: HelpRequestCreate) -> Dict[str, Any]:
-    get_child_or_404(request.child_id)
+def create_help_request(
+    request: HelpRequestCreate,
+    user: Dict[str, Any] = Depends(current_user),
+) -> Dict[str, Any]:
+    owned_child(request.child_id, user)
 
     is_urgent = request.need in {HelpRequestNeed.LOST, HelpRequestNeed.SOMETHING_HURTS}
     help_request = HelpRequest(
@@ -285,26 +329,38 @@ def create_help_request(request: HelpRequestCreate) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/help-requests", response_model=List[HelpRequest])
-def list_help_requests(child_id: Optional[str] = Query(default=None)) -> List[Dict[str, Any]]:
-    requests = storage.list_help_requests()
+def list_help_requests(
+    child_id: Optional[str] = Query(default=None),
+    user: Dict[str, Any] = Depends(current_user),
+) -> List[Dict[str, Any]]:
+    """Help requests for the caller's children, optionally narrowed to one."""
     if child_id:
-        return [request for request in requests if request.get("child_id") == child_id]
-    return requests
+        owned_child(child_id, user)
+        return [r for r in storage.list_help_requests() if r.get("child_id") == child_id]
+
+    owned = {c["id"] for c in storage.list_children() if c.get("caregiver_id") == user["id"]}
+    return [r for r in storage.list_help_requests() if r.get("child_id") in owned]
 
 
 @app.get("/api/v1/help-requests/{request_id}", response_model=HelpRequest)
-def get_help_request(request_id: str) -> Dict[str, Any]:
+def get_help_request(request_id: str, user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
     request = storage.get_help_request(request_id)
     if request is None:
         raise HTTPException(status_code=404, detail="Help request not found")
+    owned_child(request.get("child_id", ""), user)
     return request
 
 
 @app.post("/api/v1/help-requests/{request_id}/respond", response_model=HelpRequest)
-def respond_help_request(request_id: str, response: CaregiverResponseRequest) -> Dict[str, Any]:
+def respond_help_request(
+    request_id: str,
+    response: CaregiverResponseRequest,
+    user: Dict[str, Any] = Depends(current_user),
+) -> Dict[str, Any]:
     request = storage.get_help_request(request_id)
     if request is None:
         raise HTTPException(status_code=404, detail="Help request not found")
+    owned_child(request.get("child_id", ""), user)
 
     status_map = {
         CaregiverAction.SEEN: HelpRequestStatus.CAREGIVER_SEEN,

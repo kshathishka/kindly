@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError } from './api';
 import type { ChildProfile, HelpRequest, Story } from './api-types';
-import { getActiveChildId, getSession, setActiveChildId } from './session';
+import { getActiveChildId, setActiveChildId } from './session';
 
 /**
  * Data loading for the caregiver screens.
@@ -39,7 +39,7 @@ export function useChildren(): AsyncState<ChildProfile[]> & {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api.listChildren(getSession()?.id)
+    api.listChildren()
       .then((children) => {
         if (cancelled) return;
         setData(children);

@@ -55,13 +55,37 @@ function readableDetail(detail: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Reads the stored token directly rather than through session.ts, which keeps
+ * this module free of React imports and avoids a cycle between the two.
+ */
+function bearerToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem('kindly.session');
+    return raw ? ((JSON.parse(raw) as { token?: string }).token ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Called when the server rejects our token, so the UI can send the user to sign in. */
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = bearerToken();
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers ?? {}),
       },
       cache: 'no-store',
@@ -89,6 +113,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const detail = payload && typeof payload === 'object' && 'detail' in payload
       ? (payload as { detail: unknown }).detail
       : payload;
+
+    // An expired or revoked token. Handled in one place so no screen has to
+    // remember to check for it.
+    if (response.status === 401) onUnauthorized?.();
+
     throw new ApiError(response.status, readableDetail(detail, `Request failed (${response.status}).`), detail);
   }
 
@@ -111,11 +140,14 @@ export const api = {
   login: (email: string, password: string) =>
     request<AuthResponse>('/api/v1/auth/login', json({ email, password })),
 
+  logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
+
+  /** Verifies the stored token is still good. */
+  me: () => request<{ id: string; email: string; role: string }>('/api/v1/auth/me'),
+
   // -- children ------------------------------------------------------------
-  listChildren: (caregiverId?: string) =>
-    request<ChildProfile[]>(
-      `/api/v1/children${caregiverId ? `?caregiver_id=${encodeURIComponent(caregiverId)}` : ''}`,
-    ),
+  /** Scoped server-side to the signed-in caregiver. */
+  listChildren: () => request<ChildProfile[]>('/api/v1/children'),
 
   getChild: (childId: string) => request<ChildProfile>(`/api/v1/children/${childId}`),
 

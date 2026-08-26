@@ -9,6 +9,10 @@ frontend/node_modules/
 frontend/.next/
 frontend/out/
 
+# Live session state. Holds token hashes for whoever is currently signed in,
+# so it is runtime state rather than something to track.
+data/sessions.json
+
 # Local configuration and data
 .env
 .env.*

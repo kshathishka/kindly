@@ -14,10 +14,17 @@ class JSONStorage:
         self.stories_file = self.base_dir / "stories.json"
         self.users_file = self.base_dir / "users.json"
         self.help_requests_file = self.base_dir / "help_requests.json"
+        self.sessions_file = self.base_dir / "sessions.json"
         self._ensure_files()
 
     def _ensure_files(self) -> None:
-        for file_path in (self.children_file, self.stories_file, self.users_file, self.help_requests_file):
+        for file_path in (
+            self.children_file,
+            self.stories_file,
+            self.users_file,
+            self.help_requests_file,
+            self.sessions_file,
+        ):
             if not file_path.exists():
                 file_path.write_text("[]", encoding="utf-8")
 
@@ -124,3 +131,42 @@ class JSONStorage:
                 self._write_json(self.help_requests_file, requests)
                 return request
         return None
+
+    # -- sessions ------------------------------------------------------------
+    # Only the SHA-256 of a token is stored. A leaked sessions.json therefore
+    # cannot be replayed to sign in as anybody.
+
+    def list_sessions(self) -> List[Dict[str, Any]]:
+        return self._read_json(self.sessions_file)
+
+    def create_session(self, session: Dict[str, Any]) -> Dict[str, Any]:
+        sessions = self.list_sessions()
+        sessions.append(session)
+        self._write_json(self.sessions_file, sessions)
+        return session
+
+    def get_session_by_hash(self, token_hash: str) -> Optional[Dict[str, Any]]:
+        return next(
+            (s for s in self.list_sessions() if s.get("token_hash") == token_hash),
+            None,
+        )
+
+    def delete_session_by_hash(self, token_hash: str) -> bool:
+        sessions = self.list_sessions()
+        remaining = [s for s in sessions if s.get("token_hash") != token_hash]
+        if len(remaining) == len(sessions):
+            return False
+        self._write_json(self.sessions_file, remaining)
+        return True
+
+    def purge_expired_sessions(self, now_iso: str) -> int:
+        """Drops sessions whose expiry has passed. Returns how many went."""
+        sessions = self.list_sessions()
+        live = [s for s in sessions if s.get("expires_at", "") > now_iso]
+        if len(live) == len(sessions):
+            return 0
+        self._write_json(self.sessions_file, live)
+        return len(sessions) - len(live)
+
+    def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
+        return next((u for u in self.list_users() if u.get("id") == user_id), None)

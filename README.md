@@ -35,9 +35,17 @@ stories.
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
+## Deploying
+
+Frontend to Vercel, backend to Render — they are separate deploys and each needs
+the other's URL. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) walks through it.
+
+Note that Vercel cannot host the backend as written: `JSONStorage` writes to
+disk, and Vercel's serverless filesystem is ephemeral.
+
 ## Documentation
 
-[`docs/INTEGRATION.md`](docs/INTEGRATION.md) covers how the two halves connect,
-what changed to join them, and the open issues — including the fact that **no
-endpoint is authenticated yet**, so this should not be deployed beyond localhost
-as it stands.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — deploying, environment variables,
+  and how authentication works
+- [`docs/INTEGRATION.md`](docs/INTEGRATION.md) — how the two halves connect,
+  what changed to join them, and the open issues

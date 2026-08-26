@@ -6,12 +6,12 @@ import {
   Heart, Home, Loader2, MessageCircle, MoreHorizontal, Play, Plus, Settings2,
   Sparkles, UserRound, X,
 } from 'lucide-react'
-import { api, ApiError } from '@/lib/api'
+import { api, ApiError, setUnauthorizedHandler } from '@/lib/api'
 import type {
   CaregiverAction, ChildProfile, FrontendConfig, HelpRequest, HelpRequestNeed, Story,
 } from '@/lib/api-types'
 import { useChildren, useHelpRequests, useRequestWatch, useStories } from '@/lib/hooks'
-import { clearSession, getSession, useSession } from '@/lib/session'
+import { clearSession, getSession, signOutEverywhere, useSession } from '@/lib/session'
 
 const navItems = [
   { label: 'Home', icon: Home },
@@ -94,7 +94,17 @@ export default function Page() {
   const stories = useStories(child?.id ?? null)
 
   useEffect(() => {
-    if (!getSession()) window.location.href = '/auth'
+    if (!getSession()) {
+      window.location.href = '/auth'
+      return
+    }
+    // A token the server no longer accepts sends the user to sign in, from
+    // wherever in the app the rejected call happened.
+    setUnauthorizedHandler(() => {
+      clearSession()
+      window.location.href = '/auth'
+    })
+    return () => setUnauthorizedHandler(null)
   }, [])
 
   useEffect(() => {
@@ -876,7 +886,10 @@ function SettingsView() {
         </div>
         <div className="settings-row">
           <div><b>Sign out</b><small>End this session on this device.</small></div>
-          <button className="button secondary" onClick={() => { clearSession(); window.location.href = '/auth' }}>
+          <button
+            className="button secondary"
+            onClick={() => { void signOutEverywhere().finally(() => { window.location.href = '/auth' }) }}
+          >
             Sign out
           </button>
         </div>

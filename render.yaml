@@ -1,0 +1,53 @@
+# Render blueprint for the Kindly backend.
+#
+# Connect the repo at https://dashboard.render.com/blueprints and Render reads
+# this file. The frontend is NOT deployed here — it goes to Vercel, pointed at
+# this service's URL. See docs/DEPLOYMENT.md.
+
+services:
+  - type: web
+    name: kindly-api
+    runtime: python
+    # Persistent disks require a paid instance type. On the free plan Render
+    # rejects the `disk` block below, and a free service also sleeps when idle
+    # and restarts with a clean filesystem — which for JSONStorage means losing
+    # every profile and help request. Use `free` only if you accept that, and
+    # delete the `disk` block if you do.
+    plan: starter
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # JSONStorage writes to this directory, so it must survive restarts and
+    # redeploys. Without a disk, every profile and help request is lost each
+    # time the service sleeps or ships.
+    disk:
+      name: kindly-data
+      mountPath: /var/data
+      sizeGB: 1
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+      - key: JSON_DATA_DIR
+        value: /var/data
+
+      - key: APP_ENV
+        value: production
+
+      # The Vercel domain(s) allowed to call this API, comma-separated. Set
+      # this after the frontend is deployed — an empty value blocks the browser
+      # from reaching the API at all.
+      - key: CORS_ORIGINS
+        sync: false
+
+      # Optional. Without it stories fall back to the built-in template and are
+      # labelled as such in the UI.
+      - key: OPENAI_API_KEY
+        sync: false
+
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
