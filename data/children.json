@@ -1,0 +1,317 @@
+[
+  {
+    "id": "7eaa9f73-e2f0-4343-badd-63da96051a5b",
+    "name": "Ava",
+    "age": 7,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "dinosaurs",
+      "music"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "high",
+      "smell": "low",
+      "crowds": "medium",
+      "texture": "high"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "loud sirens"
+    ],
+    "favorite_activities": [
+      "story time"
+    ],
+    "calming_techniques": [
+      "deep breaths"
+    ],
+    "preferred_pronouns": "she/her",
+    "created_at": "2026-08-24 11:04:19.443477",
+    "updated_at": "2026-08-24 11:04:19.443477",
+    "story_count": 0
+  },
+  {
+    "id": "66ba9716-43cc-4fe4-b5e8-19ff743e758a",
+    "name": "Leo",
+    "age": 6,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "trains"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "medium",
+      "smell": "low",
+      "crowds": "high",
+      "texture": "low"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "waiting in line"
+    ],
+    "favorite_activities": [
+      "looking at trains"
+    ],
+    "calming_techniques": [
+      "counting to five"
+    ],
+    "preferred_pronouns": null,
+    "created_at": "2026-08-24 11:04:19.459815",
+    "updated_at": "2026-08-24T11:04:19.493345",
+    "story_count": 1
+  },
+  {
+    "id": "85de0904-43f2-4be1-b6e2-e22dedfbbac3",
+    "name": "Ava",
+    "age": 7,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "dinosaurs",
+      "music"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "high",
+      "smell": "low",
+      "crowds": "medium",
+      "texture": "high"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "loud sirens"
+    ],
+    "favorite_activities": [
+      "story time"
+    ],
+    "calming_techniques": [
+      "deep breaths"
+    ],
+    "preferred_pronouns": "she/her",
+    "created_at": "2026-08-24 11:11:24.569313",
+    "updated_at": "2026-08-24 11:11:24.569313",
+    "story_count": 0
+  },
+  {
+    "id": "e039e1fc-3ced-496a-b4b0-563d7e230c65",
+    "name": "Leo",
+    "age": 6,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "trains"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "medium",
+      "smell": "low",
+      "crowds": "high",
+      "texture": "low"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "waiting in line"
+    ],
+    "favorite_activities": [
+      "looking at trains"
+    ],
+    "calming_techniques": [
+      "counting to five"
+    ],
+    "preferred_pronouns": null,
+    "created_at": "2026-08-24 11:11:24.602654",
+    "updated_at": "2026-08-24T11:11:24.636362",
+    "story_count": 1
+  },
+  {
+    "id": "c7e674e2-b5a6-4935-b325-7e9bc336604f",
+    "name": "Ava",
+    "age": 7,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "dinosaurs",
+      "music"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "high",
+      "smell": "low",
+      "crowds": "medium",
+      "texture": "high"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "loud sirens"
+    ],
+    "favorite_activities": [
+      "story time"
+    ],
+    "calming_techniques": [
+      "deep breaths"
+    ],
+    "preferred_pronouns": "she/her",
+    "created_at": "2026-08-24 16:51:41.728351",
+    "updated_at": "2026-08-24 16:51:41.728351",
+    "story_count": 0
+  },
+  {
+    "id": "b184dcd9-a318-4b5d-863c-fe4ff9d30ee8",
+    "name": "Leo",
+    "age": 6,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "trains"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "medium",
+      "smell": "low",
+      "crowds": "high",
+      "texture": "low"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "waiting in line"
+    ],
+    "favorite_activities": [
+      "looking at trains"
+    ],
+    "calming_techniques": [
+      "counting to five"
+    ],
+    "preferred_pronouns": null,
+    "created_at": "2026-08-24 16:51:41.794657",
+    "updated_at": "2026-08-24T16:51:41.878784",
+    "story_count": 1
+  },
+  {
+    "id": "bdfb9de0-79b2-4ed1-a3a4-b2a24d2a7e3e",
+    "name": "Ava",
+    "age": 7,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "dinosaurs",
+      "music"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "high",
+      "smell": "low",
+      "crowds": "medium",
+      "texture": "high"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "loud sirens"
+    ],
+    "favorite_activities": [
+      "story time"
+    ],
+    "calming_techniques": [
+      "deep breaths"
+    ],
+    "preferred_pronouns": "she/her",
+    "created_at": "2026-08-24 16:54:05.853392",
+    "updated_at": "2026-08-24 16:54:05.853392",
+    "story_count": 0
+  },
+  {
+    "id": "f6474227-ff00-4d73-a797-945a91d3bd04",
+    "name": "Leo",
+    "age": 6,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "trains"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "medium",
+      "smell": "low",
+      "crowds": "high",
+      "texture": "low"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "waiting in line"
+    ],
+    "favorite_activities": [
+      "looking at trains"
+    ],
+    "calming_techniques": [
+      "counting to five"
+    ],
+    "preferred_pronouns": null,
+    "created_at": "2026-08-24 16:54:05.920353",
+    "updated_at": "2026-08-24T16:54:05.990847",
+    "story_count": 1
+  },
+  {
+    "id": "e290de00-3cf7-4066-993e-f88111f50570",
+    "name": "Ava",
+    "age": 7,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "dinosaurs",
+      "music"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "high",
+      "smell": "low",
+      "crowds": "medium",
+      "texture": "high"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "loud sirens"
+    ],
+    "favorite_activities": [
+      "story time"
+    ],
+    "calming_techniques": [
+      "deep breaths"
+    ],
+    "preferred_pronouns": "she/her",
+    "created_at": "2026-08-24 17:14:01.330881",
+    "updated_at": "2026-08-24 17:14:01.330881",
+    "story_count": 0
+  },
+  {
+    "id": "5df60c36-69fa-4098-89d2-d6af5f849052",
+    "name": "Leo",
+    "age": 6,
+    "communication_level": "simple-sentences",
+    "special_interests": [
+      "trains"
+    ],
+    "sensory_sensitivities": {
+      "sound": "medium",
+      "light": "low",
+      "touch": "medium",
+      "smell": "low",
+      "crowds": "high",
+      "texture": "low"
+    },
+    "preferred_language": "simple",
+    "known_triggers": [
+      "waiting in line"
+    ],
+    "favorite_activities": [
+      "looking at trains"
+    ],
+    "calming_techniques": [
+      "counting to five"
+    ],
+    "preferred_pronouns": null,
+    "created_at": "2026-08-24 17:14:01.361278",
+    "updated_at": "2026-08-24T17:14:01.423909",
+    "story_count": 1
+  }
+]
